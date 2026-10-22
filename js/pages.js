@@ -25,10 +25,7 @@ TB.pages = (() => {
   const isAdmin = () => TB.auth.isAdmin();
 
   /* ---------- Potongan HTML bersama ---------- */
-  const simulationBanner = () =>
-    TB.store.isSimulation()
-      ? `<div class="banner banner-sim reveal">${ic('flask-conical')}<div><strong>Data simulasi.</strong> Seluruh data di halaman ini adalah contoh untuk demo, bukan transaksi nyata. Admin dapat mengosongkannya di menu Akun Admin.</div></div>`
-      : '';
+  const simulationBanner = () => '';
 
   const pageHeader = (title, subtitle, actions = '') => `
     <div class="page-head reveal">
@@ -569,11 +566,11 @@ TB.pages = (() => {
             <form data-form="login" novalidate autocomplete="on">
               <div class="field">
                 <label for="login-username">Username atau Email Admin</label>
-                <div class="input-icon">${ic('user')}<input id="login-username" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="hasan" value="hasan" required /></div>
+                <div class="input-icon">${ic('user')}<input id="login-username" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Masukkan username atau email" required /></div>
               </div>
               <div class="field">
                 <label for="login-password">Password</label>
-                <div class="input-icon">${ic('lock')}<input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="HASANH1J1" value="HASANH1J1" required />
+                <div class="input-icon">${ic('lock')}<input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Masukkan password" required />
                   <button type="button" class="icon-btn pw-toggle" data-action="toggle-password" aria-label="Tampilkan password" aria-pressed="false">${ic('eye')}</button></div>
               </div>
               <div class="form-error" role="alert" hidden></div>

@@ -467,8 +467,8 @@ TB.store = (() => {
       TB.supabase.clearAllTables();
     }
   }
-  /** True selama data masih berupa data contoh (simulasi); false setelah admin mengosongkan data. */
-  const isSimulation = () => !!state.meta?.simulation;
+  /** Menandakan status live/deploy (banner simulasi dinonaktifkan) */
+  const isSimulation = () => false;
 
   return {
     get, getBird, subscribe, stockOf, stockMap, avgCost, nextTransactionNumber, isSimulation, syncFromSupabase,

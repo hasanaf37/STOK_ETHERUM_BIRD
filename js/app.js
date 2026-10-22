@@ -238,9 +238,9 @@
     },
     'reset-sim': async () => {
       TB.auth.requireAdmin();
-      if (await UI.confirmDialog({ title: 'Muat ulang data simulasi?', message: 'Semua data saat ini akan diganti dengan data contoh baru.', confirmText: 'Ya, muat ulang' })) {
+      if (await UI.confirmDialog({ title: 'Muat ulang data contoh?', message: 'Semua data saat ini akan diganti dengan data contoh baru.', confirmText: 'Ya, muat ulang' })) {
         TB.store.resetSimulation();
-        UI.toast('Data simulasi dimuat ulang.');
+        UI.toast('Data contoh dimuat ulang.');
       }
     },
     'clear-data': async () => {
