@@ -1,0 +1,6 @@
+{
+  "name": "kicau-makmur-dashboard",
+  "private": true,
+  "description": "Website statis (HTML/CSS/JS). Tidak membutuhkan build; file ini hanya penanda root proyek.",
+  "version": "2.0.0"
+}

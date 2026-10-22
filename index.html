@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Dashboard manajemen toko burung: stok, burung datang, penjualan, dan laporan."
+    />
+    <title>Kicau Makmur — Manajemen Toko Burung</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles.css" />
+    <!-- Pustaka pihak ketiga: ikon (Lucide), grafik (Chart.js), & backend (Supabase) -->
+    <script
+      src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"
+      defer
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"
+      defer
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+      defer
+    ></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#page">Lewati ke konten utama</a>
+    <div class="sidebar-overlay" data-sidebar="close" aria-hidden="true"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar" aria-label="Navigasi utama">
+      <div class="sidebar-head">
+        <div class="brand">
+          <span class="brand-mark"><i data-lucide="bird"></i></span>
+          <div class="brand-text">
+            <strong id="brand-name">Kicau Makmur</strong
+            ><small id="brand-tag">Manajemen Toko Burung</small>
+          </div>
+        </div>
+        <div class="sidebar-tools">
+          <button
+            type="button"
+            class="icon-btn tool-collapse"
+            data-sidebar="collapse"
+            aria-label="Perkecil sidebar"
+            title="Perkecil sidebar"
+            aria-pressed="false"
+          >
+            <i data-lucide="chevrons-left"></i>
+          </button>
+          <button
+            type="button"
+            class="icon-btn tool-hide"
+            data-sidebar="hide"
+            aria-label="Sembunyikan sidebar"
+            title="Sembunyikan sidebar"
+          >
+            <i data-lucide="panel-left-close"></i>
+          </button>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" aria-label="Menu">
+        <ul class="nav-list">
+          <li>
+            <a
+              class="nav-link"
+              data-route="beranda"
+              href="#beranda"
+              title="Dashboard"
+              ><i data-lucide="layout-dashboard"></i
+              ><span class="nav-label">Dashboard</span></a
+            >
+          </li>
+          <li>
+            <a
+              class="nav-link"
+              data-route="stok-burung"
+              href="#stok-burung"
+              title="Stok Burung"
+              ><i data-lucide="bird"></i
+              ><span class="nav-label">Stok Burung</span></a
+            >
+          </li>
+          <li>
+            <a
+              class="nav-link"
+              data-route="burung-datang"
+              href="#burung-datang"
+              title="Burung Datang"
+              ><i data-lucide="package-plus"></i
+              ><span class="nav-label">Burung Datang</span></a
+            >
+          </li>
+          <li>
+            <a
+              class="nav-link"
+              data-route="burung-terjual"
+              href="#burung-terjual"
+              title="Burung Terjual"
+              ><i data-lucide="shopping-bag"></i
+              ><span class="nav-label">Burung Terjual</span></a
+            >
+          </li>
+          <li>
+            <a class="nav-link" data-route="hpp" href="#hpp" title="HPP"
+              ><i data-lucide="calculator"></i
+              ><span class="nav-label">HPP</span></a
+            >
+          </li>
+          <li>
+            <a
+              class="nav-link"
+              data-route="laporan"
+              href="#laporan"
+              title="Laporan"
+              ><i data-lucide="bar-chart-3"></i
+              ><span class="nav-label">Laporan</span></a
+            >
+          </li>
+        </ul>
+        <ul class="nav-list nav-account">
+          <li>
+            <a
+              class="nav-link"
+              data-route="akun"
+              href="#akun"
+              title="Akun Admin"
+              ><i data-lucide="user-round"></i>
+              <span class="nav-label two-line"
+                ><strong id="account-label">Akun Admin</strong
+                ><small id="account-sub">Belum login</small></span
+              ></a
+            >
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- KONTEN -->
+    <div class="shell">
+      <header class="topbar">
+        <button
+          type="button"
+          class="icon-btn show-sidebar"
+          data-sidebar="show"
+          aria-label="Tampilkan menu"
+          aria-controls="sidebar"
+          aria-expanded="true"
+        >
+          <i data-lucide="menu"></i>
+        </button>
+        <nav aria-label="Breadcrumb" class="breadcrumb-wrap">
+          <ol class="breadcrumb" id="breadcrumb"></ol>
+        </nav>
+        <span class="pill" id="admin-pill"
+          ><i data-lucide="shield"></i
+          ><span id="admin-pill-text">Mode pengunjung</span></span
+        >
+      </header>
+      <main id="page" class="content" tabindex="-1" aria-live="polite"></main>
+      <footer class="footer">
+        © <span id="year"></span> HasanAF • copyright Reserved
+      </footer>
+    </div>
+
+    <div id="modal-root"></div>
+    <div id="toast-root" class="toast-root" aria-live="polite"></div>
+
+    <noscript
+      ><p style="padding: 24px">
+        Website ini membutuhkan JavaScript untuk berjalan.
+      </p></noscript
+    >
+
+    <!-- Urutan penting: konfigurasi -> supabase -> utilitas -> data -> logika -> UI -> halaman -> aplikasi -->
+    <script src="js/utils.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/seed.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/calc.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/pages.js"></script>
+    <script src="js/forms.js"></script>
+    <script>
+      document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
+    <!-- app.js memakai defer agar berjalan setelah Lucide & Chart.js (juga defer) termuat -->
+    <script src="js/app.js" defer></script>
+  </body>
+</html>
