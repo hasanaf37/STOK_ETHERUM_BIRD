@@ -443,6 +443,10 @@ function animateCountUp(el, target, isCurrency = false) {
   requestAnimationFrame(update);
 }
 
+function getJualTotal(item) {
+  return Math.max(0, (Number(item.jumlah || 0) * Number(item.harga || 0)) - Number(item.diskon || 0));
+}
+
 function renderDashboard() {
   populateBirdSelects();
   const timeFilter = document.getElementById('dash-filter-time').value;
@@ -465,7 +469,7 @@ function renderDashboard() {
   const stokHidup = Math.max(0, totalBeliQty - totalJualQty - totalStatusQty);
 
   const totalModal = beliFiltered.reduce((s, i) => s + (Number(i.jumlah) * Number(i.harga)), 0);
-  const totalJual = jualFiltered.reduce((s, i) => s + (Number(i.jumlah) * Number(i.harga)), 0);
+  const totalJual = jualFiltered.reduce((s, i) => s + getJualTotal(i), 0);
   const totalKerugian = statusFiltered.reduce((s, i) => s + Number(i.totalHarga || 0), 0);
   const totalHpp = birdFilter === 'all'
     ? hppFiltered.reduce((s, i) => s + Number(i.nominal || 0), 0)
@@ -494,7 +498,7 @@ function renderCharts(beliList, jualList, statusList, hppList, birdFilter) {
 
   jualList.forEach(i => {
     ensureDate(i.tanggal);
-    dateMap[i.tanggal].pemasukan += Number(i.jumlah) * Number(i.harga);
+    dateMap[i.tanggal].pemasukan += getJualTotal(i);
   });
   beliList.forEach(i => {
     ensureDate(i.tanggal);
@@ -681,7 +685,7 @@ function renderTable(type) {
   updateBulkDeleteBtn(type);
 
   if (rows.length === 0) {
-    const baseCols = type === 'beli' ? 10 : ((type === 'jual' || type === 'status') ? 8 : 6);
+    const baseCols = type === 'beli' ? 10 : (type === 'jual' ? 9 : (type === 'status' ? 8 : 6));
     const colSpan = loggedIn ? baseCols : baseCols - 2;
     tbody.innerHTML = `
       <tr>
@@ -734,7 +738,8 @@ function renderTable(type) {
         </tr>
       `;
     } else if (type === 'jual') {
-      const total = Number(item.jumlah) * Number(item.harga);
+      const diskon = Number(item.diskon || 0);
+      const total = getJualTotal(item);
       return `
         <tr class="hover:bg-slate-50/80 transition-colors">
           ${checkboxHtml}
@@ -742,6 +747,7 @@ function renderTable(type) {
           <td class="py-3.5 px-4 font-semibold text-slate-900">${escapeHtml(item.jenisBurung)}</td>
           <td class="py-3.5 px-4">${item.jumlah} ekor</td>
           <td class="py-3.5 px-4">${formatRupiah(item.harga)}</td>
+          <td class="py-3.5 px-4 ${diskon > 0 ? 'text-rose-600 font-semibold' : 'text-slate-400'}">${diskon > 0 ? '-' + formatRupiah(diskon) : 'Rp 0'}</td>
           <td class="py-3.5 px-4 font-bold text-slate-900">${formatRupiah(total)}</td>
           <td class="py-3.5 px-4 text-slate-600 whitespace-nowrap">${formatTanggalIndo(item.tanggal)}</td>
           ${aksiHtml}
@@ -1057,8 +1063,12 @@ function openFormModal(type, id = null) {
           <input type="number" id="f-harga" readonly value="${autoHargaJual}" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-100 text-slate-600 font-semibold cursor-not-allowed focus:outline-none" />
         </div>
       </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Diskon (Rp)</label>
+        <input type="number" id="f-diskon" min="0" oninput="updateLiveTotalPreview()" value="${item ? Number(item.diskon || 0) : 0}" placeholder="0" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+      </div>
       <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 flex items-center justify-between">
-        <span class="text-xs font-semibold text-emerald-700">Total Harga Jual (Otomatis):</span>
+        <span class="text-xs font-semibold text-emerald-700">Total Harga Jual Setelah Diskon:</span>
         <span id="f-total-preview" class="text-sm font-bold text-emerald-700">Rp 0</span>
       </div>
       <div>
@@ -1146,8 +1156,9 @@ function openFormModal(type, id = null) {
 function updateLiveTotalPreview() {
   const jml = Number(document.getElementById('f-jumlah')?.value || 0);
   const hrg = Number(document.getElementById('f-harga')?.value || 0);
+  const dsk = Math.max(0, Number(document.getElementById('f-diskon')?.value || 0));
   const prev = document.getElementById('f-total-preview');
-  if (prev) prev.textContent = formatRupiah(jml * hrg);
+  if (prev) prev.textContent = formatRupiah(Math.max(0, (jml * hrg) - dsk));
 }
 
 function updateDatePreview(val) {
@@ -1186,6 +1197,7 @@ function handleDataFormSubmit(e) {
       jenisBurung,
       jumlah,
       harga: Number(document.getElementById('f-harga').value),
+      diskon: Math.max(0, Number(document.getElementById('f-diskon')?.value || 0)),
       tanggal,
     };
   } else if (type === 'status') {
@@ -1285,7 +1297,7 @@ function renderLaporan() {
     : [];
 
   const sumBeli = beliF.reduce((s, i) => s + Number(i.jumlah) * Number(i.harga), 0);
-  const sumJual = jualF.reduce((s, i) => s + Number(i.jumlah) * Number(i.harga), 0);
+  const sumJual = jualF.reduce((s, i) => s + getJualTotal(i), 0);
   const sumStatus = statusF.reduce((s, i) => s + Number(i.totalHarga), 0);
   const sumHpp = hppF.reduce((s, i) => s + Number(i.nominal), 0);
   const laba = sumJual - sumBeli - sumStatus - sumHpp;
@@ -1319,16 +1331,20 @@ function renderLaporan() {
     : '<tr><td colspan="8" class="py-4 text-center text-slate-400">Tidak ada data stok burung</td></tr>';
 
   document.getElementById('lap-tbody-jual').innerHTML = jualF.length
-    ? jualF.map((i, idx) => `
+    ? jualF.map((i, idx) => {
+        const diskon = Number(i.diskon || 0);
+        return `
         <tr class="pdf-avoid-break">
           <td class="py-2 px-3">${idx + 1}</td>
           <td class="py-2 px-3 font-semibold">${escapeHtml(i.jenisBurung)}</td>
           <td class="py-2 px-3">${i.jumlah} ekor</td>
           <td class="py-2 px-3">${formatRupiah(i.harga)}</td>
-          <td class="py-2 px-3 font-bold">${formatRupiah(Number(i.jumlah) * Number(i.harga))}</td>
+          <td class="py-2 px-3 ${diskon > 0 ? 'text-rose-600 font-semibold' : 'text-slate-400'}">${diskon > 0 ? '-' + formatRupiah(diskon) : 'Rp 0'}</td>
+          <td class="py-2 px-3 font-bold">${formatRupiah(getJualTotal(i))}</td>
           <td class="py-2 px-3">${formatTanggalIndo(i.tanggal)}</td>
-        </tr>`).join('')
-    : '<tr><td colspan="6" class="py-4 text-center text-slate-400">Tidak ada data penjualan</td></tr>';
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="7" class="py-4 text-center text-slate-400">Tidak ada data penjualan</td></tr>';
 
   document.getElementById('lap-tbody-status').innerHTML = statusF.length
     ? statusF.map((i, idx) => `
@@ -1712,6 +1728,7 @@ function toDbRow(type, obj) {
       jenis_burung: obj.jenisBurung,
       jumlah: Number(obj.jumlah || 0),
       harga_jual: Number(obj.harga || 0),
+      diskon: Number(obj.diskon || 0),
       tanggal: obj.tanggal,
     };
   }
@@ -1750,6 +1767,7 @@ function fromDbRow(type, row) {
       jenisBurung: row.jenis_burung,
       jumlah: Number(row.jumlah || 0),
       harga: Number(row.harga_jual || 0),
+      diskon: Number(row.diskon || 0),
       tanggal: row.tanggal,
     };
   }

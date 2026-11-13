@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS public.burung_terjual (
   jenis_burung TEXT NOT NULL,
   jumlah INTEGER NOT NULL DEFAULT 1 CHECK (jumlah > 0),
   harga_jual BIGINT NOT NULL DEFAULT 0,
+  diskon BIGINT NOT NULL DEFAULT 0,
   tanggal DATE NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -69,11 +70,11 @@ SELECT
     - COALESCE((SELECT SUM(jumlah) FROM public.status_burung), 0)
   ) AS total_stok_hidup,
   COALESCE((SELECT SUM(jumlah * harga_beli) FROM public.stok_burung), 0) AS total_modal_pembelian,
-  COALESCE((SELECT SUM(jumlah * harga_jual) FROM public.burung_terjual), 0) AS total_penjualan,
+  COALESCE((SELECT SUM(GREATEST(0, (jumlah * harga_jual) - diskon)) FROM public.burung_terjual), 0) AS total_penjualan,
   COALESCE((SELECT SUM(total_harga) FROM public.status_burung), 0) AS total_kerugian_status,
   COALESCE((SELECT SUM(nominal) FROM public.hpp), 0) AS total_hpp,
   (
-    COALESCE((SELECT SUM(jumlah * harga_jual) FROM public.burung_terjual), 0)
+    COALESCE((SELECT SUM(GREATEST(0, (jumlah * harga_jual) - diskon)) FROM public.burung_terjual), 0)
     - COALESCE((SELECT SUM(jumlah * harga_beli) FROM public.stok_burung), 0)
     - COALESCE((SELECT SUM(total_harga) FROM public.status_burung), 0)
     - COALESCE((SELECT SUM(nominal) FROM public.hpp), 0)
