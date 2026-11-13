@@ -1477,12 +1477,19 @@ function openSettingsView() {
   switchMenu('pengaturan');
 }
 
+const DEFAULT_SUPABASE_CONFIG = {
+  url: 'https://sxkkcsuwyvqxedjuxxyr.supabase.co',
+  key: 'sb_publishable_FPNgcH_nllKMyBAboTZN0w_P1-J62lW',
+};
+
 function getSupabaseConfig() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.SUPABASE_CONFIG) || '{}');
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.SUPABASE_CONFIG) || 'null');
+    if (saved && saved.url && saved.key) return saved;
   } catch {
-    return {};
+    // ignore parse error
   }
+  return { ...DEFAULT_SUPABASE_CONFIG };
 }
 
 function formatShortDateTime(dateObj) {
@@ -1580,29 +1587,53 @@ async function checkSupabaseConnection(showFeedback = true) {
   if (btn) btn.disabled = true;
   const start = performance.now();
   try {
-    const res = await fetch(`${url}/rest/v1/`, {
+    const headers = { apikey: key };
+    if (key.startsWith('eyJ')) {
+      headers.Authorization = `Bearer ${key}`;
+    }
+
+    const authRes = await fetch(`${url}/auth/v1/settings`, {
       method: 'GET',
-      headers: {
-        apikey: key,
-        Authorization: `Bearer ${key}`,
-      },
+      headers,
     });
     const latency = Math.max(1, Math.round(performance.now() - start));
     const nowText = formatShortDateTime(new Date());
 
-    if (res.ok || res.status === 401 || res.status === 404) {
-      const validAuth = res.ok;
+    if (authRes.ok) {
+      const tableRes = await fetch(`${url}/rest/v1/stok_burung?select=id&limit=1`, {
+        method: 'GET',
+        headers,
+      });
+      const tableReady = tableRes.ok;
+
       updateSupabaseStatusUI({
-        online: validAuth,
+        online: true,
         latencyMs: latency,
         lastCheckText: nowText,
-        message: validAuth ? 'Auth API Aktif • Tabel Database Siap' : 'URL terjangkau, periksa kembali API Key Anda',
+        message: tableReady
+          ? 'Auth API Aktif • Tabel Database Siap'
+          : 'Auth API Aktif • Jalankan supabase_schema.sql di SQL Editor',
       });
       if (showFeedback) {
-        showToast(validAuth ? `Terhubung ke Supabase (${latency} ms)` : 'API Key tidak valid.', validAuth ? 'success' : 'warning');
+        showToast(
+          tableReady
+            ? `Terhubung ke Supabase (${latency} ms)`
+            : `Terhubung (${latency} ms), namun tabel belum dibuat. Jalankan supabase_schema.sql di SQL Editor Supabase.`,
+          tableReady ? 'success' : 'warning'
+        );
+      }
+    } else if (authRes.status === 401 || authRes.status === 403 || authRes.status === 404) {
+      updateSupabaseStatusUI({
+        online: false,
+        latencyMs: latency,
+        lastCheckText: nowText,
+        message: 'URL terjangkau, periksa kembali API Key Anda',
+      });
+      if (showFeedback) {
+        showToast('API Key tidak valid. Gunakan Publishable / Anon Key.', 'warning');
       }
     } else {
-      throw new Error(`HTTP ${res.status}`);
+      throw new Error(`HTTP ${authRes.status}`);
     }
   } catch {
     updateSupabaseStatusUI({
@@ -1637,22 +1668,13 @@ function saveSupabaseConfig(e) {
 function resetSupabaseConfig() {
   if (!requireAuth()) return;
   localStorage.removeItem(STORAGE_KEYS.SUPABASE_CONFIG);
-  if (sbRealtimeChannel && sbClient) {
-    sbClient.removeChannel(sbRealtimeChannel);
-  }
-  sbRealtimeChannel = null;
-  sbClient = null;
   const urlEl = document.getElementById('sb-url');
   const keyEl = document.getElementById('sb-key');
-  if (urlEl) urlEl.value = '';
-  if (keyEl) keyEl.value = '';
-  updateSupabaseStatusUI({
-    online: false,
-    latencyMs: null,
-    lastCheckText: formatShortDateTime(new Date()),
-    message: 'Kredensial direset. Menggunakan LocalStorage Browser.',
-  });
-  showToast('Konfigurasi Supabase berhasil direset.', 'info');
+  if (urlEl) urlEl.value = DEFAULT_SUPABASE_CONFIG.url;
+  if (keyEl) keyEl.value = DEFAULT_SUPABASE_CONFIG.key;
+  showToast('Konfigurasi Supabase dikembalikan ke default.', 'info');
+  checkSupabaseConnection(false);
+  initSupabaseClient();
 }
 
 // ==================== SUPABASE SYNC & REALTIME ====================
@@ -1755,12 +1777,7 @@ async function initSupabaseClient() {
     sbRealtimeChannel = null;
   }
 
-  let cfg = null;
-  try {
-    cfg = JSON.parse(localStorage.getItem(STORAGE_KEYS.SUPABASE_CONFIG) || 'null');
-  } catch {
-    cfg = null;
-  }
+  const cfg = getSupabaseConfig();
 
   if (!cfg || !cfg.url || !cfg.key || !window.supabase?.createClient) {
     sbClient = null;
