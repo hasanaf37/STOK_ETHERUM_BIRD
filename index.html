@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ethereum Bird — Dashboard Admin Stok & Keuangan</title>
+  <link rel="icon" type="image/jpeg" href="img/logo.jpg" />
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#312e81',
+            },
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+  <!-- html2pdf.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="antialiased selection:bg-indigo-100 selection:text-indigo-800">
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed top-4 right-4 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+  <!-- Mobile Backdrop -->
+  <div id="sidebar-backdrop" onclick="toggleSidebar(false)" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 hidden lg:hidden transition-opacity"></div>
+
+  <div class="min-h-screen flex">
+    <!-- ==================== LEFT SIDEBAR ==================== -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-slate-100 flex flex-col justify-between overflow-y-auto transform -translate-x-full lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none shrink-0">
+      <div>
+        <!-- Brand Header -->
+        <div class="sidebar-header-inner flex items-center justify-between px-5 py-5 border-b border-slate-800">
+          <div class="sidebar-brand-wrap flex items-center gap-3 min-w-0">
+            <img src="img/logo.jpg" alt="Logo Ethereum Bird" class="w-10 h-10 rounded-xl object-cover shadow-lg shadow-indigo-500/20 bg-white shrink-0" />
+            <div class="sidebar-text min-w-0">
+              <h1 class="text-lg font-bold tracking-tight text-white leading-tight truncate">Ethereum Bird</h1>
+              <p class="text-[11px] font-medium text-slate-400 uppercase tracking-wider truncate">Stok & Keuangan</p>
+            </div>
+          </div>
+          <!-- Desktop Minimize / Expand Button -->
+          <button onclick="toggleDesktopSidebar()" id="btn-collapse-sidebar" title="Minimize / Perluas Sidebar" class="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0" aria-label="Minimize Sidebar">
+            <svg id="icon-collapse-sidebar" class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/></svg>
+          </button>
+          <!-- Mobile Close Button -->
+          <button onclick="toggleSidebar(false)" class="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800" aria-label="Tutup Menu">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <!-- Navigation Links -->
+        <nav class="p-4 space-y-1.5" aria-label="Menu Utama">
+          <p class="sidebar-text px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">Menu Utama</p>
+
+          <button onclick="switchMenu('dashboard')" id="nav-dashboard" title="1. Dashboard" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            <span class="sidebar-text truncate">1. Dashboard</span>
+          </button>
+
+          <button onclick="switchMenu('stok')" id="nav-stok" title="2. Stok Burung" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            <span class="sidebar-text truncate">2. Stok Burung</span>
+          </button>
+
+          <button onclick="switchMenu('terjual')" id="nav-terjual" title="3. Burung Terjual" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span class="sidebar-text truncate">3. Burung Terjual</span>
+          </button>
+
+          <button onclick="switchMenu('lain')" id="nav-lain" title="4. Lain-lain" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+            <span class="sidebar-text truncate">4. Lain-lain</span>
+          </button>
+
+          <button onclick="switchMenu('laporan')" id="nav-laporan" title="5. Laporan" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <span class="sidebar-text truncate">5. Laporan</span>
+          </button>
+        </nav>
+
+        <!-- Utility: Kosongkan Data -->
+        <div class="px-4 mt-2 auth-only">
+          <button onclick="confirmClearAllData()" title="Kosongkan Semua Data" class="sidebar-reset-btn w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-rose-300 hover:bg-slate-800/80 transition-colors border border-slate-800">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            <span class="sidebar-text truncate">Kosongkan Data</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Bottom-Left Profile / Login Card -->
+      <div class="p-4 border-t border-slate-800 bg-slate-900/95">
+        <div id="sidebar-auth-container">
+          <!-- Rendered dynamically by JS -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <div class="flex-1 flex flex-col min-w-0">
+      <!-- Top Bar -->
+      <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200 px-3 sm:px-6 lg:px-8 py-3 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-4">
+        <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <button onclick="toggleSidebar(true)" class="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 border border-slate-200 shrink-0" aria-label="Buka Menu">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+          <div class="min-w-0">
+            <h2 id="page-title" class="text-base sm:text-xl font-bold text-slate-900 truncate">Dashboard</h2>
+            <p id="page-subtitle" class="text-xs text-slate-500 hidden sm:block truncate">Ringkasan stok burung dan performa keuangan Ethereum Bird</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <div id="mode-badge" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold whitespace-nowrap">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content Container -->
+      <main class="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-5 sm:space-y-6">
+
+        <!-- ==================== MENU 1: DASHBOARD ==================== -->
+        <section id="section-dashboard" class="space-y-6 fade-in">
+          <!-- Global Filter Bar -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 class="text-sm font-bold text-slate-800">Filter Global Dashboard</h3>
+              <p class="text-xs text-slate-500">Sesuaikan rentang waktu dan jenis burung untuk memperbarui statistik & grafik</p>
+            </div>
+            <div class="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
+              <div class="w-full sm:w-auto">
+                <label for="dash-filter-time" class="sr-only">Filter Waktu</label>
+                <select id="dash-filter-time" onchange="renderDashboard()" class="w-full sm:w-auto px-3.5 py-2 text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700">
+                  <option value="all">Semua Waktu</option>
+                  <option value="today">Hari Ini</option>
+                  <option value="month">Bulan Ini</option>
+                  <option value="year">Tahun Ini</option>
+                </select>
+              </div>
+              <div class="w-full sm:w-auto">
+                <label for="dash-filter-bird" class="sr-only">Filter Jenis Burung</label>
+                <select id="dash-filter-bird" onchange="renderDashboard()" class="w-full sm:w-auto px-3.5 py-2 text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700">
+                  <option value="all">Semua Jenis Burung</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
+            <!-- Total Stok Hidup -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:shadow-md transition-shadow">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Stok Hidup</span>
+                <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                </div>
+              </div>
+              <div class="text-2xl sm:text-3xl font-extrabold text-slate-900"><span id="kpi-stok">0</span> <span class="text-sm font-semibold text-slate-500">Ekor</span></div>
+              <p class="text-xs text-slate-400 mt-1.5" id="kpi-stok-desc">Beli - Jual - Status Burung</p>
+            </div>
+
+            <!-- Total Modal Pembelian -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:shadow-md transition-shadow">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Modal Pembelian</span>
+                <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                </div>
+              </div>
+              <div class="text-2xl sm:text-2xl font-extrabold text-slate-900" id="kpi-modal">Rp 0</div>
+              <p class="text-xs text-slate-400 mt-1.5">Total pembelian stok burung</p>
+            </div>
+
+            <!-- Total Penjualan -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:shadow-md transition-shadow">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Penjualan</span>
+                <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+              </div>
+              <div class="text-2xl sm:text-2xl font-extrabold text-emerald-600" id="kpi-jual">Rp 0</div>
+              <p class="text-xs text-slate-400 mt-1.5">Total omzet penjualan burung</p>
+            </div>
+
+            <!-- Keuntungan Bersih -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:shadow-md transition-shadow">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Keuntungan Bersih</span>
+                <div class="w-9 h-9 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                </div>
+              </div>
+              <div class="text-2xl sm:text-2xl font-extrabold" id="kpi-laba">Rp 0</div>
+              <p class="text-xs text-slate-400 mt-1.5">Penjualan - Modal - Rugi - HPP</p>
+            </div>
+          </div>
+
+          <!-- Interactive Charts -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <!-- Chart 1: Line/Area Pemasukan vs Pengeluaran -->
+            <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="text-base font-bold text-slate-900">Tren Pemasukan vs Pengeluaran</h3>
+                  <p class="text-xs text-slate-500">Perbandingan omzet penjualan dengan total modal, kerugian & HPP</p>
+                </div>
+              </div>
+              <div class="relative h-56 sm:h-72 w-full">
+                <canvas id="chart-tren"></canvas>
+              </div>
+            </div>
+
+            <!-- Chart 2: Perbandingan Stok per Jenis Burung -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs">
+              <div class="mb-4">
+                <h3 class="text-base font-bold text-slate-900">Stok per Jenis Burung</h3>
+                <p class="text-xs text-slate-500">Distribusi stok hidup saat ini (ekor)</p>
+              </div>
+              <div class="relative h-56 sm:h-72 w-full">
+                <canvas id="chart-stok"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== MENU 2: STOK BURUNG ==================== -->
+        <section id="section-stok" class="space-y-8 hidden fade-in">
+          <!-- TABEL 1: HARGA BELI -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="p-5 border-b border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <div class="flex items-center gap-2.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                  <h3 class="text-base font-bold text-slate-900 tracking-wide">Harga</h3>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">Catatan pembelian stok burung masuk ke toko</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2.5">
+                <button id="bulk-del-beli" onclick="confirmBulkDelete('beli')" class="hidden items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  <span>Hapus Terpilih (<span id="count-del-beli">0</span> item)</span>
+                </button>
+                <button onclick="openFormModal('beli')" data-auth-btn class="auth-only inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs transition-all">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                  <span>Tambah Data</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Search & Filter Bar -->
+            <div class="px-5 py-3.5 bg-slate-50/70 border-b border-slate-200 flex flex-col sm:flex-row gap-3">
+              <div class="relative flex-1">
+                <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <input type="text" id="search-beli" oninput="renderTable('beli')" placeholder="Cari jenis burung..." class="w-full pl-10 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="month" id="month-beli" onchange="renderTable('beli')" class="px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700" title="Filter Bulan" />
+                <button onclick="clearTableFilter('beli')" class="px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 bg-white border border-slate-200 rounded-xl hover:bg-slate-100">Reset</button>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    <th class="auth-only py-3.5 px-4 w-12">
+                      <label class="inline-flex items-center gap-1.5 cursor-pointer" title="Pilih Semua">
+                        <input type="checkbox" id="select-all-beli" onchange="toggleSelectAll('beli', this)" class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                      </label>
+                    </th>
+                    <th class="py-3.5 px-3 w-12">No</th>
+                    <th class="py-3.5 px-4">Jenis Burung</th>
+                    <th class="py-3.5 px-4">Jumlah</th>
+                    <th class="py-3.5 px-4">Harga Beli</th>
+                    <th class="py-3.5 px-4">Harga Jual</th>
+                    <th class="py-3.5 px-4">Total Harga Beli</th>
+                    <th class="py-3.5 px-4">Total Harga Jual</th>
+                    <th class="py-3.5 px-4">Tanggal</th>
+                    <th class="auth-only py-3.5 px-4 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-beli" class="divide-y divide-slate-100 text-sm text-slate-700"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== MENU 3: BURUNG TERJUAL ==================== -->
+        <section id="section-terjual" class="space-y-8 hidden fade-in">
+          <!-- TABEL: BURUNG TERJUAL (HARGA JUAL) -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="p-5 border-b border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <div class="flex items-center gap-2.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                  <h3 class="text-base font-bold text-slate-900 uppercase tracking-wide">BURUNG TERJUAL (HARGA JUAL)</h3>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">Catatan penjualan burung kepada pelanggan</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2.5">
+                <button id="bulk-del-jual" onclick="confirmBulkDelete('jual')" class="hidden items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  <span>Hapus Terpilih (<span id="count-del-jual">0</span> item)</span>
+                </button>
+                <button onclick="openFormModal('jual')" data-auth-btn class="auth-only inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-700 shadow-xs transition-all">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                  <span>Tambah Data Burung Terjual</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Search & Filter Bar -->
+            <div class="px-5 py-3.5 bg-slate-50/70 border-b border-slate-200 flex flex-col sm:flex-row gap-3">
+              <div class="relative flex-1">
+                <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <input type="text" id="search-jual" oninput="renderTable('jual')" placeholder="Cari jenis burung..." class="w-full pl-10 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="month" id="month-jual" onchange="renderTable('jual')" class="px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-700" title="Filter Bulan" />
+                <button onclick="clearTableFilter('jual')" class="px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 bg-white border border-slate-200 rounded-xl hover:bg-slate-100">Reset</button>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    <th class="auth-only py-3.5 px-4 w-12">
+                      <label class="inline-flex items-center gap-1.5 cursor-pointer" title="Pilih Semua">
+                        <input type="checkbox" id="select-all-jual" onchange="toggleSelectAll('jual', this)" class="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                      </label>
+                    </th>
+                    <th class="py-3.5 px-3 w-12">No</th>
+                    <th class="py-3.5 px-4">Jenis Burung</th>
+                    <th class="py-3.5 px-4">Jumlah</th>
+                    <th class="py-3.5 px-4">Harga Jual</th>
+                    <th class="py-3.5 px-4">Total Harga</th>
+                    <th class="py-3.5 px-4">Tanggal</th>
+                    <th class="auth-only py-3.5 px-4 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-jual" class="divide-y divide-slate-100 text-sm text-slate-700"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== MENU 3: LAIN-LAIN ==================== -->
+        <section id="section-lain" class="space-y-8 hidden fade-in">
+          <!-- TABEL 1: STATUS BURUNG -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="p-5 border-b border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <div class="flex items-center gap-2.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                  <h3 class="text-base font-bold text-slate-900 uppercase tracking-wide">STATUS BURUNG</h3>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">Catatan burung mati, lepas, atau hilang beserta nilai kerugiannya</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2.5">
+                <button id="bulk-del-status" onclick="confirmBulkDelete('status')" class="hidden items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  <span>Hapus Terpilih (<span id="count-del-status">0</span> item)</span>
+                </button>
+                <button onclick="openFormModal('status')" data-auth-btn class="auth-only inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-rose-600 text-white hover:bg-rose-700 shadow-xs transition-all">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                  <span>Tambah Data</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Search & Filter Bar -->
+            <div class="px-5 py-3.5 bg-slate-50/70 border-b border-slate-200 flex flex-col sm:flex-row gap-3">
+              <div class="relative flex-1">
+                <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <input type="text" id="search-status" oninput="renderTable('status')" placeholder="Cari jenis burung..." class="w-full pl-10 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500" />
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <select id="filter-status-type" onchange="renderTable('status')" class="px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500 text-slate-700">
+                  <option value="all">Semua Status</option>
+                  <option value="Mati">Mati</option>
+                  <option value="Lepas">Lepas</option>
+                  <option value="Hilang">Hilang</option>
+                </select>
+                <input type="month" id="month-status" onchange="renderTable('status')" class="px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500 text-slate-700" title="Filter Bulan" />
+                <button onclick="clearTableFilter('status')" class="px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 bg-white border border-slate-200 rounded-xl hover:bg-slate-100">Reset</button>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    <th class="auth-only py-3.5 px-4 w-12">
+                      <label class="inline-flex items-center gap-1.5 cursor-pointer" title="Pilih Semua">
+                        <input type="checkbox" id="select-all-status" onchange="toggleSelectAll('status', this)" class="w-4 h-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500" />
+                      </label>
+                    </th>
+                    <th class="py-3.5 px-3 w-12">No</th>
+                    <th class="py-3.5 px-4">Jenis Burung</th>
+                    <th class="py-3.5 px-4">Jumlah</th>
+                    <th class="py-3.5 px-4">Status</th>
+                    <th class="py-3.5 px-4">Total Harga (Kerugian)</th>
+                    <th class="py-3.5 px-4">Tanggal</th>
+                    <th class="auth-only py-3.5 px-4 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-status" class="divide-y divide-slate-100 text-sm text-slate-700"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TABEL 2: HPP -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="p-5 border-b border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <div class="flex items-center gap-2.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                  <h3 class="text-base font-bold text-slate-900 uppercase tracking-wide">HPP (Harga Pokok Penjualan / Operasional)</h3>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">Biaya operasional perawatan, makanan, vitamin, dan ongkos kirim</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2.5">
+                <button id="bulk-del-hpp" onclick="confirmBulkDelete('hpp')" class="hidden items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  <span>Hapus Terpilih (<span id="count-del-hpp">0</span> item)</span>
+                </button>
+                <button onclick="openFormModal('hpp')" data-auth-btn class="auth-only inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-amber-600 text-white hover:bg-amber-700 shadow-xs transition-all">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                  <span>Tambah Data</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Search & Filter Bar -->
+            <div class="px-5 py-3.5 bg-slate-50/70 border-b border-slate-200 flex flex-col sm:flex-row gap-3">
+              <div class="relative flex-1">
+                <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <input type="text" id="search-hpp" oninput="renderTable('hpp')" placeholder="Cari kategori HPP..." class="w-full pl-10 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" />
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <select id="filter-hpp-cat" onchange="renderTable('hpp')" class="px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-700">
+                  <option value="all">Semua Kategori</option>
+                  <option value="Makanan & Vitamin">Makanan & Vitamin</option>
+                  <option value="Ongkos Kirim">Ongkos Kirim</option>
+                </select>
+                <input type="month" id="month-hpp" onchange="renderTable('hpp')" class="px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-700" title="Filter Bulan" />
+                <button onclick="clearTableFilter('hpp')" class="px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 bg-white border border-slate-200 rounded-xl hover:bg-slate-100">Reset</button>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    <th class="auth-only py-3.5 px-4 w-12">
+                      <label class="inline-flex items-center gap-1.5 cursor-pointer" title="Pilih Semua">
+                        <input type="checkbox" id="select-all-hpp" onchange="toggleSelectAll('hpp', this)" class="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500" />
+                      </label>
+                    </th>
+                    <th class="py-3.5 px-3 w-12">No</th>
+                    <th class="py-3.5 px-4">HPP</th>
+                    <th class="py-3.5 px-4">Nominal / Biaya</th>
+                    <th class="py-3.5 px-4">Tanggal</th>
+                    <th class="auth-only py-3.5 px-4 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-hpp" class="divide-y divide-slate-100 text-sm text-slate-700"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== MENU 4: LAPORAN ==================== -->
+        <section id="section-laporan" class="space-y-6 hidden fade-in">
+          <!-- Report Filter & Print Header -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 class="text-base font-bold text-slate-900">Filter & Cetak Laporan Menyeluruh</h3>
+                <p class="text-xs text-slate-500">Filter data untuk menghitung ulang rekapitulasi laba/rugi dan mencetak PDF A4</p>
+              </div>
+              <button onclick="exportReportPDF()" id="btn-export-pdf" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm shadow-indigo-500/20 transition-all shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                <span>Cetak / Download PDF</span>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-slate-100">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Dari Tanggal</label>
+                <input type="date" id="lap-date-start" onchange="renderLaporan()" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Sampai Tanggal</label>
+                <input type="date" id="lap-date-end" onchange="renderLaporan()" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Filter Jenis Burung</label>
+                <select id="lap-filter-bird" onchange="renderLaporan()" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="all">Semua Jenis Burung</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Pencarian Cepat</label>
+                <div class="flex gap-2">
+                  <input type="text" id="lap-search" oninput="renderLaporan()" placeholder="Cari burung / kategori..." class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  <button onclick="resetLaporanFilter()" class="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl shrink-0">Reset</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Printable Report Area -->
+          <div id="laporan-print-area" class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+            <!-- Kop Surat -->
+            <div class="border-b-2 border-slate-900 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <img src="img/logo.jpg" alt="Logo Ethereum Bird" class="w-12 h-12 rounded-xl object-cover border border-slate-200 bg-white shrink-0" />
+                <div>
+                  <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">Laporan Keuangan & Stok - Ethereum Bird</h2>
+                  <p class="text-xs text-slate-500" id="lap-periode-text">Periode: Semua Waktu</p>
+                </div>
+              </div>
+              <div class="text-left sm:text-right text-xs text-slate-500">
+                <p>Dicetak pada:</p>
+                <p class="font-semibold text-slate-700" id="lap-printed-at"></p>
+              </div>
+            </div>
+
+            <!-- Rekapitulasi Laba / Rugi -->
+            <div class="pdf-avoid-break">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Ringkasan Rekapitulasi Keuangan</h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                  <p class="text-[11px] font-semibold text-slate-500 uppercase">Total Pembelian</p>
+                  <p class="text-base font-bold text-slate-900 mt-1" id="lap-sum-beli">Rp 0</p>
+                </div>
+                <div class="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200">
+                  <p class="text-[11px] font-semibold text-emerald-700 uppercase">Total Penjualan</p>
+                  <p class="text-base font-bold text-emerald-700 mt-1" id="lap-sum-jual">Rp 0</p>
+                </div>
+                <div class="p-3.5 rounded-xl bg-rose-50/70 border border-rose-200">
+                  <p class="text-[11px] font-semibold text-rose-700 uppercase">Kerugian Status</p>
+                  <p class="text-base font-bold text-rose-700 mt-1" id="lap-sum-status">Rp 0</p>
+                </div>
+                <div class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200">
+                  <p class="text-[11px] font-semibold text-amber-700 uppercase">Total Biaya HPP</p>
+                  <p class="text-base font-bold text-amber-700 mt-1" id="lap-sum-hpp">Rp 0</p>
+                </div>
+                <div class="p-3.5 rounded-xl bg-indigo-50 border border-indigo-200">
+                  <p class="text-[11px] font-semibold text-indigo-700 uppercase">LABA / KEUNTUNGAN BERSIH</p>
+                  <p class="text-base font-extrabold mt-1" id="lap-sum-laba">Rp 0</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Grafik Laporan -->
+            <div class="pdf-avoid-break grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-600 mb-3">Grafik Ringkasan Keuangan</h4>
+                <div class="relative h-56 w-full">
+                  <canvas id="chart-lap-keuangan"></canvas>
+                </div>
+              </div>
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-600 mb-3">Komposisi Omzet & Pengeluaran</h4>
+                <div class="relative h-56 w-full">
+                  <canvas id="chart-lap-komposisi"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Rincian Tabel 1: Stok Burung (Harga Beli & Jual) -->
+            <div class="space-y-2">
+              <h4 class="text-sm font-bold text-slate-800 border-l-4 border-indigo-500 pl-2.5">1. Rincian Stok Burung (Harga Beli & Jual)</h4>
+              <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase">
+                      <th class="py-2.5 px-3 w-10">No</th>
+                      <th class="py-2.5 px-3">Jenis Burung</th>
+                      <th class="py-2.5 px-3">Jumlah</th>
+                      <th class="py-2.5 px-3">Harga Beli</th>
+                      <th class="py-2.5 px-3">Harga Jual</th>
+                      <th class="py-2.5 px-3">Total Harga Beli</th>
+                      <th class="py-2.5 px-3">Total Harga Jual</th>
+                      <th class="py-2.5 px-3">Tanggal</th>
+                    </tr>
+                  </thead>
+                  <tbody id="lap-tbody-beli" class="divide-y divide-slate-100"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Rincian Tabel 2: Burung Terjual -->
+            <div class="space-y-2">
+              <h4 class="text-sm font-bold text-slate-800 border-l-4 border-emerald-500 pl-2.5">2. Rincian Burung Terjual (Harga Jual)</h4>
+              <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase">
+                      <th class="py-2.5 px-3 w-10">No</th>
+                      <th class="py-2.5 px-3">Jenis Burung</th>
+                      <th class="py-2.5 px-3">Jumlah</th>
+                      <th class="py-2.5 px-3">Harga Jual</th>
+                      <th class="py-2.5 px-3">Total Harga</th>
+                      <th class="py-2.5 px-3">Tanggal</th>
+                    </tr>
+                  </thead>
+                  <tbody id="lap-tbody-jual" class="divide-y divide-slate-100"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Rincian Tabel 3: Status Burung -->
+            <div class="space-y-2">
+              <h4 class="text-sm font-bold text-slate-800 border-l-4 border-rose-500 pl-2.5">3. Rincian Status Burung (Mati / Lepas / Hilang)</h4>
+              <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase">
+                      <th class="py-2.5 px-3 w-10">No</th>
+                      <th class="py-2.5 px-3">Jenis Burung</th>
+                      <th class="py-2.5 px-3">Jumlah</th>
+                      <th class="py-2.5 px-3">Status</th>
+                      <th class="py-2.5 px-3">Total Harga (Kerugian)</th>
+                      <th class="py-2.5 px-3">Tanggal</th>
+                    </tr>
+                  </thead>
+                  <tbody id="lap-tbody-status" class="divide-y divide-slate-100"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Rincian Tabel 4: HPP -->
+            <div class="space-y-2">
+              <h4 class="text-sm font-bold text-slate-800 border-l-4 border-amber-500 pl-2.5">4. Rincian Biaya Operasional (HPP)</h4>
+              <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase">
+                      <th class="py-2.5 px-3 w-10">No</th>
+                      <th class="py-2.5 px-3">Kategori HPP</th>
+                      <th class="py-2.5 px-3">Nominal / Biaya</th>
+                      <th class="py-2.5 px-3">Tanggal</th>
+                    </tr>
+                  </thead>
+                  <tbody id="lap-tbody-hpp" class="divide-y divide-slate-100"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== MENU: PENGATURAN DATABASE SUPABASE ==================== -->
+        <section id="section-pengaturan" class="hidden fade-in">
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <!-- Top Blue Accent Line -->
+            <div class="h-1 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-500"></div>
+
+            <div class="p-5 sm:p-7 space-y-6">
+              <!-- Header Row -->
+              <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-5 border-b border-slate-100">
+                <div class="space-y-2">
+                  <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[11px] font-bold uppercase tracking-wider">
+                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
+                    <span>DATABASE SUPABASE (CLOUD)</span>
+                  </div>
+                  <h3 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Status &amp; Konfigurasi Database</h3>
+                  <p class="text-xs sm:text-sm text-slate-500 max-w-2xl">
+                    Pantau metrik kesehatan koneksi real-time, latensi server, atau sesuaikan kredensial API Supabase.
+                  </p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+                  <span id="sb-status-pill" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
+                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                    <span>BELUM TERHUBUNG</span>
+                  </span>
+                  <button onclick="checkSupabaseConnection(true)" id="btn-sb-refresh" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 shadow-2xs transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    <span>Segarkan</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 2x2 Metric Cards -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Card 1: Status Server -->
+                <div class="p-4 sm:p-5 rounded-2xl border border-slate-200 bg-white flex items-start justify-between gap-3">
+                  <div>
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">STATUS SERVER</p>
+                    <p id="sb-card-status" class="text-base sm:text-lg font-extrabold text-slate-700 mt-1.5">Mode Lokal (Offline)</p>
+                    <p id="sb-card-status-sub" class="text-xs text-slate-400 mt-1">Isi URL &amp; API Key untuk menghubungkan ke Supabase</p>
+                  </div>
+                  <div id="sb-card-status-icon" class="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  </div>
+                </div>
+
+                <!-- Card 2: Kecepatan Respons -->
+                <div class="p-4 sm:p-5 rounded-2xl border border-slate-200 bg-white flex items-start justify-between gap-3">
+                  <div>
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">KECEPATAN RESPONS</p>
+                    <p id="sb-card-latency" class="text-base sm:text-lg font-extrabold text-slate-900 mt-1.5">- ms</p>
+                    <p class="text-xs text-slate-400 mt-1">Latensi Jaringan (Ping)</p>
+                  </div>
+                  <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                  </div>
+                </div>
+
+                <!-- Card 3: Pengecekan Terakhir -->
+                <div class="p-4 sm:p-5 rounded-2xl border border-slate-200 bg-white flex items-start justify-between gap-3">
+                  <div>
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">PENGECEKAN TERAKHIR</p>
+                    <p id="sb-card-lastcheck" class="text-base sm:text-lg font-extrabold text-slate-900 mt-1.5">-</p>
+                    <p class="text-xs text-slate-400 mt-1">Waktu Pengecekan Sistem</p>
+                  </div>
+                  <div class="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  </div>
+                </div>
+
+                <!-- Card 4: Mode Penyimpanan -->
+                <div class="p-4 sm:p-5 rounded-2xl border border-slate-200 bg-white flex items-start justify-between gap-3">
+                  <div>
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">MODE PENYIMPANAN</p>
+                    <p id="sb-card-mode" class="text-base sm:text-lg font-extrabold text-slate-900 mt-1.5">LocalStorage Browser</p>
+                    <p id="sb-card-mode-sub" class="text-xs text-slate-400 mt-1">Penyimpanan Lokal Browser</p>
+                  </div>
+                  <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pengaturan Kredensial API -->
+              <div class="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 space-y-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
+                  <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    <h4 class="text-sm font-bold text-slate-900">Pengaturan Kredensial API</h4>
+                  </div>
+                  <p class="text-xs text-slate-400">Kredensial disimpan aman pada browser Anda</p>
+                </div>
+
+                <form id="form-supabase" onsubmit="saveSupabaseConfig(event)" class="space-y-4">
+                  <div>
+                    <label for="sb-url" class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">SUPABASE PROJECT URL</label>
+                    <div class="relative">
+                      <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+                      </span>
+                      <input type="url" id="sb-url" placeholder="https://xxxxxxxxxxxx.supabase.co" class="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white font-mono text-slate-800" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label for="sb-key" class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">SUPABASE PUBLISHABLE / ANON API KEY</label>
+                    <div class="relative">
+                      <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                      </span>
+                      <input type="password" id="sb-key" placeholder="Masukkan Anon / Publishable API Key" class="w-full pl-10 pr-11 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white font-mono text-slate-800" />
+                      <button type="button" onclick="toggleSbKeyVisibility()" title="Tampilkan / Sembunyikan Key" class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700">
+                        <svg id="sb-eye-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="flex items-start gap-2 text-xs text-slate-500 pt-1">
+                    <svg class="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Perubahan URL dan API Key langsung disimpan dan menghubungkan ulang sesi web ke Supabase.</span>
+                  </div>
+
+                  <div class="flex flex-wrap items-center justify-end gap-3 pt-2">
+                    <button type="button" onclick="resetSupabaseConfig()" class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                      <span>Reset Default</span>
+                    </button>
+                    <button type="submit" class="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-500/20 transition-colors">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                      <span>Simpan URL &amp; API Key</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: LOGIN ADMIN (SPLIT SCREEN) ==================== -->
+  <div id="modal-auth" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/70 backdrop-blur-sm p-3 sm:p-6 overflow-y-auto">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden fade-in grid grid-cols-1 md:grid-cols-12 relative">
+      <!-- Close Button -->
+      <button onclick="closeModal('modal-auth')" title="Tutup" class="absolute top-4 right-4 z-10 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+
+      <!-- Left Visual Panel (Desktop / Tablet) -->
+      <div class="hidden md:flex md:col-span-7 bg-gradient-to-br from-slate-50 via-indigo-50/70 to-blue-100/70 p-8 lg:p-10 flex-col justify-between relative overflow-hidden border-r border-slate-100">
+        <!-- Subtle decorative hexagons/circles -->
+        <div class="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-indigo-200/30 blur-2xl pointer-events-none"></div>
+        <div class="absolute -bottom-20 -left-16 w-64 h-64 rounded-full bg-blue-200/30 blur-2xl pointer-events-none"></div>
+
+        <div class="relative z-10">
+          <h2 class="text-2xl lg:text-3xl font-extrabold text-slate-900 leading-snug tracking-tight">
+            Kelola Stok & Keuangan<br />
+            <span class="text-indigo-600">Ethereum Bird</span> Lebih Mudah
+          </h2>
+        </div>
+
+        <!-- Center Hexagonal / Geometric Showcase -->
+        <div class="relative z-10 flex items-center justify-center my-6">
+          <div class="relative w-64 h-64 flex items-center justify-center">
+            <!-- Outer soft blue ring -->
+            <div class="absolute inset-2 rounded-full bg-gradient-to-tr from-indigo-100 to-blue-50 border border-indigo-200/60 shadow-inner"></div>
+            <!-- Floating accent badges -->
+            <div class="absolute -top-1 right-6 w-12 h-12 rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 flex items-center justify-center rotate-12">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+            </div>
+            <div class="absolute bottom-4 -left-2 w-11 h-11 rounded-2xl bg-cyan-500 text-white shadow-lg shadow-cyan-500/30 flex items-center justify-center -rotate-12">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            </div>
+            <div class="absolute bottom-6 right-2 w-10 h-10 rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-500/30 flex items-center justify-center rotate-6">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+
+            <!-- Main Logo -->
+            <div class="relative w-44 h-44 rounded-3xl bg-white p-2.5 shadow-xl shadow-indigo-900/10 border border-indigo-100 flex items-center justify-center">
+              <img src="img/logo.jpg" alt="Ethereum Bird" class="w-full h-full object-cover rounded-2xl" />
+            </div>
+          </div>
+        </div>
+
+        <div class="relative z-10 flex items-center gap-2 text-xs font-medium text-slate-500">
+          <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+          <span>Sistem Administrasi & Laporan Keuangan Terpadu</span>
+        </div>
+      </div>
+
+      <!-- Right Form Panel -->
+      <div class="md:col-span-5 bg-white p-6 sm:p-8 lg:p-9 flex flex-col justify-center">
+        <!-- Brand Header -->
+        <div class="flex items-center gap-2.5 mb-8">
+          <img src="img/logo.jpg" alt="Logo Ethereum Bird" class="w-9 h-9 rounded-xl object-cover border border-slate-200 shrink-0" />
+          <span class="text-base font-extrabold tracking-tight text-slate-900">Ethereum Bird</span>
+        </div>
+
+        <!-- Blue Heading (replacing red from reference) -->
+        <h3 class="text-2xl font-extrabold text-indigo-600 mb-2" id="auth-modal-title">Login</h3>
+        <p class="text-sm font-bold text-slate-800">Masuk ke akun Admin</p>
+        <p class="text-xs text-slate-500 mt-1 mb-6 leading-relaxed">
+          Selamat datang kembali. Silakan masuk untuk mengelola stok burung dan laporan keuangan.
+        </p>
+
+        <form id="form-auth" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Username</label>
+            <input type="text" id="auth-username" required placeholder="Masukkan username" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Password</label>
+            <input type="password" id="auth-password" required placeholder="Masukkan password" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all" />
+          </div>
+
+          <div class="flex items-center justify-between pt-0.5">
+            <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" id="auth-remember" checked class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+              <span class="text-xs font-medium text-slate-600">Ingat saya</span>
+            </label>
+          </div>
+
+          <button type="submit" id="auth-submit-btn" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-bold tracking-wide uppercase shadow-md shadow-indigo-500/25 transition-all">
+            Sign In
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: TAMBAH / EDIT DATA ==================== -->
+  <div id="modal-form" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden fade-in">
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <h3 class="text-base font-bold text-slate-900" id="form-modal-title">Tambah Data</h3>
+        <button onclick="closeModal('modal-form')" class="text-slate-400 hover:text-slate-700 p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="data-form" onsubmit="handleDataFormSubmit(event)" class="p-6 space-y-4">
+        <input type="hidden" id="form-type" />
+        <input type="hidden" id="form-id" />
+
+        <!-- Dynamic fields injected here -->
+        <div id="form-fields" class="space-y-4"></div>
+
+        <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeModal('modal-form')" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100">Batal</button>
+          <button type="submit" class="px-5 py-2 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs">Simpan Data</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: KONFIRMASI ==================== -->
+  <div id="modal-confirm" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4 fade-in">
+      <div class="w-11 h-11 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      </div>
+      <div class="text-center">
+        <h3 class="text-base font-bold text-slate-900" id="confirm-title">Konfirmasi</h3>
+        <p class="text-sm text-slate-500 mt-1" id="confirm-message"></p>
+      </div>
+      <div class="flex items-center justify-center gap-2.5 pt-2">
+        <button onclick="closeModal('modal-confirm')" class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200">Batal</button>
+        <button id="confirm-ok-btn" class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700">Ya, Lanjutkan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== JAVASCRIPT ==================== -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
