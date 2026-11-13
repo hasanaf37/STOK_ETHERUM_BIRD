@@ -1333,6 +1333,10 @@ function renderLaporan() {
   document.getElementById('lap-tbody-jual').innerHTML = jualF.length
     ? jualF.map((i, idx) => {
         const diskon = Number(i.diskon || 0);
+        const totalRow = getJualTotal(i);
+        const beliMatch = state.beli.find(b => b.jenisBurung.trim().toLowerCase() === i.jenisBurung.trim().toLowerCase());
+        const hargaBeli = beliMatch ? Number(beliMatch.harga || 0) : 0;
+        const keuntunganBersih = totalRow - (Number(i.jumlah || 0) * hargaBeli);
         return `
         <tr class="pdf-avoid-break">
           <td class="py-2 px-3">${idx + 1}</td>
@@ -1340,11 +1344,12 @@ function renderLaporan() {
           <td class="py-2 px-3">${i.jumlah} ekor</td>
           <td class="py-2 px-3">${formatRupiah(i.harga)}</td>
           <td class="py-2 px-3 ${diskon > 0 ? 'text-rose-600 font-semibold' : 'text-slate-400'}">${diskon > 0 ? '-' + formatRupiah(diskon) : 'Rp 0'}</td>
-          <td class="py-2 px-3 font-bold">${formatRupiah(getJualTotal(i))}</td>
+          <td class="py-2 px-3 font-bold">${formatRupiah(totalRow)}</td>
+          <td class="py-2 px-3 font-bold ${keuntunganBersih >= 0 ? 'text-emerald-700' : 'text-rose-600'}">${formatRupiah(keuntunganBersih)}</td>
           <td class="py-2 px-3">${formatTanggalIndo(i.tanggal)}</td>
         </tr>`;
       }).join('')
-    : '<tr><td colspan="7" class="py-4 text-center text-slate-400">Tidak ada data penjualan</td></tr>';
+    : '<tr><td colspan="8" class="py-4 text-center text-slate-400">Tidak ada data penjualan</td></tr>';
 
   document.getElementById('lap-tbody-status').innerHTML = statusF.length
     ? statusF.map((i, idx) => `
@@ -1380,7 +1385,7 @@ function renderLaporanCharts(sumBeli, sumJual, sumStatus, sumHpp, laba) {
   state.charts.lapKeuangan = new Chart(ctxKeu, {
     type: 'bar',
     data: {
-      labels: ['Pembelian', 'Penjualan', 'Rugi Status', 'Biaya HPP', 'Laba/Rugi'],
+      labels: ['Pembelian', 'Penjualan', 'Rugi Status', 'Biaya HPP', 'Laba/Keuntungan Bersih'],
       datasets: [{
         label: 'Nominal (Rp)',
         data: [sumBeli, sumJual, sumStatus, sumHpp, laba],
