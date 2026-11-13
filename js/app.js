@@ -913,6 +913,203 @@ function getStokBirdOptions(excludeJualId = null, excludeStatusId = null) {
   return Array.from(map.values()).sort((a, b) => a.jenisBurung.localeCompare(b.jenisBurung));
 }
 
+let currentJualStokOptions = [];
+
+function buildBeliMultiRowHtml(index) {
+  return `
+    <div class="beli-multi-row p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 space-y-2.5">
+      <div class="flex items-center justify-between">
+        <span class="b-row-label text-xs font-bold text-slate-700 uppercase tracking-wide">Item #${index + 1}</span>
+        <button type="button" onclick="removeBeliMultiRow(this)" class="b-remove-btn text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded-lg transition-colors">Hapus</button>
+      </div>
+      <div>
+        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Jenis Burung</label>
+        <input type="text" required placeholder="Contoh: Murai Batu" class="b-jenis w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 mb-1">Jumlah (Ekor)</label>
+          <input type="number" required min="1" value="1" oninput="updateMultiBeliTotals()" class="b-jumlah w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 mb-1">Harga Beli / Ekor (Rp)</label>
+          <input type="number" required min="0" placeholder="1500000" oninput="updateMultiBeliTotals()" class="b-harga w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 mb-1">Harga Jual / Ekor (Rp)</label>
+          <input type="number" required min="0" placeholder="2000000" oninput="updateMultiBeliTotals()" class="b-harga-jual w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-2 text-xs pt-1">
+        <span class="font-semibold text-slate-600">Modal Beli: <span class="b-sub-beli text-indigo-600 font-bold">Rp 0</span></span>
+        <span class="font-semibold text-slate-600">Potensi Jual: <span class="b-sub-jual text-emerald-600 font-bold">Rp 0</span></span>
+      </div>
+    </div>
+  `;
+}
+
+function addBeliMultiRow() {
+  const container = document.getElementById('beli-multi-rows');
+  if (!container) return;
+  const idx = container.querySelectorAll('.beli-multi-row').length;
+  container.insertAdjacentHTML('beforeend', buildBeliMultiRowHtml(idx));
+  refreshBeliMultiRowUI();
+  updateMultiBeliTotals();
+}
+
+function removeBeliMultiRow(btn) {
+  const container = document.getElementById('beli-multi-rows');
+  if (!container) return;
+  const rows = container.querySelectorAll('.beli-multi-row');
+  if (rows.length <= 1) return;
+  btn.closest('.beli-multi-row')?.remove();
+  refreshBeliMultiRowUI();
+  updateMultiBeliTotals();
+}
+
+function refreshBeliMultiRowUI() {
+  const rows = document.querySelectorAll('#beli-multi-rows .beli-multi-row');
+  rows.forEach((row, i) => {
+    const label = row.querySelector('.b-row-label');
+    if (label) label.textContent = `Item #${i + 1}`;
+    const removeBtn = row.querySelector('.b-remove-btn');
+    if (removeBtn) removeBtn.classList.toggle('hidden', rows.length <= 1);
+  });
+  const countEl = document.getElementById('beli-multi-count');
+  if (countEl) countEl.textContent = `${rows.length} item`;
+}
+
+function updateMultiBeliTotals() {
+  const rows = document.querySelectorAll('#beli-multi-rows .beli-multi-row');
+  let grandModal = 0;
+  rows.forEach(row => {
+    const jml = Number(row.querySelector('.b-jumlah')?.value || 0);
+    const hrgBeli = Number(row.querySelector('.b-harga')?.value || 0);
+    const hrgJual = Number(row.querySelector('.b-harga-jual')?.value || 0);
+    const subBeli = jml * hrgBeli;
+    const subJual = jml * hrgJual;
+    grandModal += subBeli;
+    const subBeliEl = row.querySelector('.b-sub-beli');
+    const subJualEl = row.querySelector('.b-sub-jual');
+    if (subBeliEl) subBeliEl.textContent = formatRupiah(subBeli);
+    if (subJualEl) subJualEl.textContent = formatRupiah(subJual);
+  });
+  const prev = document.getElementById('f-total-preview');
+  if (prev) prev.textContent = formatRupiah(grandModal);
+}
+
+function buildJualMultiRowHtml(index, options) {
+  const defaultOpt = options[index % options.length] || options[0];
+  return `
+    <div class="jual-multi-row p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 space-y-2.5">
+      <div class="flex items-center justify-between">
+        <span class="j-row-label text-xs font-bold text-slate-700 uppercase tracking-wide">Item #${index + 1}</span>
+        <button type="button" onclick="removeJualMultiRow(this)" class="j-remove-btn text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded-lg transition-colors">Hapus</button>
+      </div>
+      <div>
+        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Jenis Burung (Sesuai Stok Burung)</label>
+        <select onchange="onSelectMultiBirdForJual(this)" class="j-jenis w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+          ${options.map(o => `
+            <option value="${escapeHtml(o.jenisBurung)}" ${o.jenisBurung === defaultOpt.jenisBurung ? 'selected' : ''}>
+              ${escapeHtml(o.jenisBurung)} (Stok: ${o.stokTersedia} ekor)
+            </option>
+          `).join('')}
+        </select>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 mb-1">Jumlah (Ekor)</label>
+          <input type="number" required min="1" ${defaultOpt.stokTersedia > 0 ? `max="${defaultOpt.stokTersedia}"` : ''} value="1" oninput="updateMultiJualTotals()" class="j-jumlah w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 mb-1">Harga Jual / Ekor</label>
+          <input type="number" readonly value="${defaultOpt.hargaJual}" class="j-harga w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-slate-100 text-slate-600 font-semibold cursor-not-allowed focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 mb-1">Diskon (Rp)</label>
+          <input type="number" min="0" value="0" oninput="updateMultiJualTotals()" class="j-diskon w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+      </div>
+      <div class="flex items-center justify-between text-xs pt-1">
+        <span class="j-stok-info font-semibold ${defaultOpt.stokTersedia > 0 ? 'text-emerald-600' : 'text-rose-600'}">Stok tersedia: ${defaultOpt.stokTersedia} ekor</span>
+        <span class="font-bold text-slate-700">Subtotal: <span class="j-subtotal text-emerald-700">${formatRupiah(defaultOpt.hargaJual)}</span></span>
+      </div>
+    </div>
+  `;
+}
+
+function addJualMultiRow() {
+  const container = document.getElementById('jual-multi-rows');
+  if (!container || currentJualStokOptions.length === 0) return;
+  const idx = container.querySelectorAll('.jual-multi-row').length;
+  container.insertAdjacentHTML('beforeend', buildJualMultiRowHtml(idx, currentJualStokOptions));
+  refreshJualMultiRowUI();
+  updateMultiJualTotals();
+}
+
+function removeJualMultiRow(btn) {
+  const container = document.getElementById('jual-multi-rows');
+  if (!container) return;
+  const rows = container.querySelectorAll('.jual-multi-row');
+  if (rows.length <= 1) return;
+  btn.closest('.jual-multi-row')?.remove();
+  refreshJualMultiRowUI();
+  updateMultiJualTotals();
+}
+
+function refreshJualMultiRowUI() {
+  const rows = document.querySelectorAll('#jual-multi-rows .jual-multi-row');
+  rows.forEach((row, i) => {
+    const label = row.querySelector('.j-row-label');
+    if (label) label.textContent = `Item #${i + 1}`;
+    const removeBtn = row.querySelector('.j-remove-btn');
+    if (removeBtn) removeBtn.classList.toggle('hidden', rows.length <= 1);
+  });
+  const countEl = document.getElementById('jual-multi-count');
+  if (countEl) countEl.textContent = `${rows.length} item`;
+}
+
+function onSelectMultiBirdForJual(selectEl) {
+  const row = selectEl.closest('.jual-multi-row');
+  if (!row) return;
+  const match = currentJualStokOptions.find(o => o.jenisBurung === selectEl.value);
+  if (!match) return;
+  const hargaInput = row.querySelector('.j-harga');
+  const stokInfo = row.querySelector('.j-stok-info');
+  const jumlahInput = row.querySelector('.j-jumlah');
+
+  if (hargaInput) hargaInput.value = match.hargaJual;
+  if (stokInfo) {
+    stokInfo.textContent = `Stok tersedia: ${match.stokTersedia} ekor`;
+    stokInfo.className = `j-stok-info font-semibold ${match.stokTersedia > 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+  }
+  if (jumlahInput) {
+    if (match.stokTersedia > 0) {
+      jumlahInput.max = match.stokTersedia;
+      if (Number(jumlahInput.value) > match.stokTersedia) jumlahInput.value = match.stokTersedia;
+    } else {
+      jumlahInput.removeAttribute('max');
+    }
+  }
+  updateMultiJualTotals();
+}
+
+function updateMultiJualTotals() {
+  const rows = document.querySelectorAll('#jual-multi-rows .jual-multi-row');
+  let grandTotal = 0;
+  rows.forEach(row => {
+    const jml = Number(row.querySelector('.j-jumlah')?.value || 0);
+    const hrg = Number(row.querySelector('.j-harga')?.value || 0);
+    const dsk = Math.max(0, Number(row.querySelector('.j-diskon')?.value || 0));
+    const sub = Math.max(0, (jml * hrg) - dsk);
+    grandTotal += sub;
+    const subEl = row.querySelector('.j-subtotal');
+    if (subEl) subEl.textContent = formatRupiah(sub);
+  });
+  const prev = document.getElementById('f-total-preview');
+  if (prev) prev.textContent = formatRupiah(grandTotal);
+}
+
 function onSelectBirdForJual(selectedName) {
   const excludeId = document.getElementById('form-id')?.value || null;
   const options = getStokBirdOptions(excludeId);
@@ -992,6 +1189,13 @@ function openFormModal(type, id = null) {
     hpp: isEdit ? 'Edit Data HPP' : 'Tambah Data HPP',
   };
 
+  const modalCard = document.getElementById('modal-form-card');
+  if (modalCard) {
+    const useWide = (type === 'jual' || type === 'beli') && !isEdit;
+    modalCard.classList.toggle('max-w-2xl', useWide);
+    modalCard.classList.toggle('max-w-lg', !useWide);
+  }
+
   document.getElementById('form-modal-title').textContent = titles[type];
   document.getElementById('form-type').value = type;
   document.getElementById('form-id').value = id || '';
@@ -1001,83 +1205,145 @@ function openFormModal(type, id = null) {
 
   if (type === 'beli') {
     const defDate = item ? item.tanggal : today;
-    const defHargaJual = item ? (item.hargaJual !== undefined ? item.hargaJual : item.harga) : '';
-    fieldsEl.innerHTML = `
-      <div>
-        <label class="block text-xs font-semibold text-slate-700 mb-1">Jenis Burung</label>
-        <input type="text" id="f-jenis" required value="${escapeHtml(item ? item.jenisBurung : '')}" placeholder="Contoh: Murai Batu" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    if (!isEdit) {
+      fieldsEl.innerHTML = `
+        <div class="pb-3 border-b border-slate-100">
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Stok Masuk (Untuk Semua Item)</label>
+          <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+            <input type="date" id="f-tanggal" required oninput="updateDatePreview(this.value)" value="${defDate}" class="flex-1 px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <button type="button" onclick="addBeliMultiRow()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              Tambah List Burung
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1">Format: <span id="f-date-preview" class="font-semibold text-slate-700">${formatTanggalIndo(defDate)}</span></p>
+        </div>
+        <div id="beli-multi-rows" class="space-y-3">
+          ${buildBeliMultiRowHtml(0)}
+        </div>
+        <div class="p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-200 flex items-center justify-between">
+          <div>
+            <span class="text-xs font-semibold text-indigo-900 block">Total Modal Beli (<span id="beli-multi-count">1 item</span>)</span>
+            <span class="text-[11px] text-indigo-600">Akumulasi modal pembelian seluruh baris</span>
+          </div>
+          <span id="f-total-preview" class="text-base font-extrabold text-indigo-700">Rp 0</span>
+        </div>
+      `;
+      setTimeout(() => {
+        refreshBeliMultiRowUI();
+        updateMultiBeliTotals();
+      }, 0);
+    } else {
+      const defHargaJual = item ? (item.hargaJual !== undefined ? item.hargaJual : item.harga) : '';
+      fieldsEl.innerHTML = `
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Jumlah (Ekor)</label>
-          <input type="number" id="f-jumlah" required min="1" oninput="updateLiveTotalPreview()" value="${item ? item.jumlah : 1}" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Jenis Burung</label>
+          <input type="text" id="f-jenis" required value="${escapeHtml(item ? item.jenisBurung : '')}" placeholder="Contoh: Murai Batu" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Jumlah (Ekor)</label>
+            <input type="number" id="f-jumlah" required min="1" oninput="updateLiveTotalPreview()" value="${item ? item.jumlah : 1}" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Harga Beli / Ekor (Rp)</label>
+            <input type="number" id="f-harga" required min="0" oninput="updateLiveTotalPreview()" value="${item ? item.harga : ''}" placeholder="1500000" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Harga Jual / Ekor (Rp)</label>
+            <input type="number" id="f-harga-jual" required min="0" value="${defHargaJual}" placeholder="2000000" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          </div>
+        </div>
+        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-500">Total Modal Beli (Otomatis):</span>
+          <span id="f-total-preview" class="text-sm font-bold text-indigo-600">Rp 0</span>
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Harga Beli / Ekor (Rp)</label>
-          <input type="number" id="f-harga" required min="0" oninput="updateLiveTotalPreview()" value="${item ? item.harga : ''}" placeholder="1500000" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal</label>
+          <input type="date" id="f-tanggal" required oninput="updateDatePreview(this.value)" value="${defDate}" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <p class="text-xs text-slate-500 mt-1">Format: <span id="f-date-preview" class="font-semibold text-slate-700">${formatTanggalIndo(defDate)}</span></p>
         </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Harga Jual / Ekor (Rp)</label>
-          <input type="number" id="f-harga-jual" required min="0" value="${defHargaJual}" placeholder="2000000" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-        </div>
-      </div>
-      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-        <span class="text-xs font-semibold text-slate-500">Total Modal Beli (Otomatis):</span>
-        <span id="f-total-preview" class="text-sm font-bold text-indigo-600">Rp 0</span>
-      </div>
-      <div>
-        <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal</label>
-        <input type="date" id="f-tanggal" required oninput="updateDatePreview(this.value)" value="${defDate}" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-        <p class="text-xs text-slate-500 mt-1">Format: <span id="f-date-preview" class="font-semibold text-slate-700">${formatTanggalIndo(defDate)}</span></p>
-      </div>
-    `;
-    setTimeout(updateLiveTotalPreview, 0);
+      `;
+      setTimeout(updateLiveTotalPreview, 0);
+    }
   } else if (type === 'jual') {
     const defDate = item ? item.tanggal : today;
     const stokOptions = getStokBirdOptions(id);
-    const selectedBird = item ? item.jenisBurung : stokOptions[0].jenisBurung;
-    const matchedOpt = stokOptions.find(o => o.jenisBurung === selectedBird) || stokOptions[0];
-    const autoHargaJual = matchedOpt ? matchedOpt.hargaJual : (item ? item.harga : 0);
 
-    fieldsEl.innerHTML = `
-      <div>
-        <label class="block text-xs font-semibold text-slate-700 mb-1">Jenis Burung (Sesuai Stok Burung)</label>
-        <select id="f-jenis" required onchange="onSelectBirdForJual(this.value)" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
-          ${stokOptions.map(o => `
-            <option value="${escapeHtml(o.jenisBurung)}" ${o.jenisBurung === selectedBird ? 'selected' : ''}>
-              ${escapeHtml(o.jenisBurung)} (Stok: ${o.stokTersedia} ekor)
-            </option>
-          `).join('')}
-        </select>
-        <p id="f-stok-info" class="text-xs mt-1 font-semibold ${matchedOpt.stokTersedia > 0 ? 'text-emerald-600' : 'text-rose-600'}">
-          Stok tersedia: ${matchedOpt.stokTersedia} ekor
-        </p>
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    if (!isEdit) {
+      currentJualStokOptions = stokOptions;
+      fieldsEl.innerHTML = `
+        <div class="pb-3 border-b border-slate-100">
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Penjualan (Untuk Semua Item)</label>
+          <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+            <input type="date" id="f-tanggal" required oninput="updateDatePreview(this.value)" value="${defDate}" class="flex-1 px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            <button type="button" onclick="addJualMultiRow()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              Tambah List Burung
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1">Format: <span id="f-date-preview" class="font-semibold text-slate-700">${formatTanggalIndo(defDate)}</span></p>
+        </div>
+        <div id="jual-multi-rows" class="space-y-3">
+          ${buildJualMultiRowHtml(0, stokOptions)}
+        </div>
+        <div class="p-3.5 rounded-xl bg-emerald-50/80 border border-emerald-200 flex items-center justify-between">
+          <div>
+            <span class="text-xs font-semibold text-emerald-800 block">Total Penjualan (<span id="jual-multi-count">1 item</span>)</span>
+            <span class="text-[11px] text-emerald-600">Sudah termasuk potongan diskon masing-masing baris</span>
+          </div>
+          <span id="f-total-preview" class="text-base font-extrabold text-emerald-700">Rp 0</span>
+        </div>
+      `;
+      setTimeout(() => {
+        refreshJualMultiRowUI();
+        updateMultiJualTotals();
+      }, 0);
+    } else {
+      const selectedBird = item ? item.jenisBurung : stokOptions[0].jenisBurung;
+      const matchedOpt = stokOptions.find(o => o.jenisBurung === selectedBird) || stokOptions[0];
+      const autoHargaJual = matchedOpt ? matchedOpt.hargaJual : (item ? item.harga : 0);
+
+      fieldsEl.innerHTML = `
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Jumlah Terjual (Ekor)</label>
-          <input type="number" id="f-jumlah" required min="1" ${matchedOpt.stokTersedia > 0 ? `max="${matchedOpt.stokTersedia}"` : ''} oninput="updateLiveTotalPreview()" value="${item ? item.jumlah : 1}" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Jenis Burung (Sesuai Stok Burung)</label>
+          <select id="f-jenis" required onchange="onSelectBirdForJual(this.value)" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+            ${stokOptions.map(o => `
+              <option value="${escapeHtml(o.jenisBurung)}" ${o.jenisBurung === selectedBird ? 'selected' : ''}>
+                ${escapeHtml(o.jenisBurung)} (Stok: ${o.stokTersedia} ekor)
+              </option>
+            `).join('')}
+          </select>
+          <p id="f-stok-info" class="text-xs mt-1 font-semibold ${matchedOpt.stokTersedia > 0 ? 'text-emerald-600' : 'text-rose-600'}">
+            Stok tersedia: ${matchedOpt.stokTersedia} ekor
+          </p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Jumlah Terjual (Ekor)</label>
+            <input type="number" id="f-jumlah" required min="1" ${matchedOpt.stokTersedia > 0 ? `max="${matchedOpt.stokTersedia}"` : ''} oninput="updateLiveTotalPreview()" value="${item ? item.jumlah : 1}" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Harga Jual / Ekor (Otomatis)</label>
+            <input type="number" id="f-harga" readonly value="${autoHargaJual}" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-100 text-slate-600 font-semibold cursor-not-allowed focus:outline-none" />
+          </div>
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Harga Jual / Ekor (Otomatis)</label>
-          <input type="number" id="f-harga" readonly value="${autoHargaJual}" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-100 text-slate-600 font-semibold cursor-not-allowed focus:outline-none" />
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Diskon (Rp)</label>
+          <input type="number" id="f-diskon" min="0" oninput="updateLiveTotalPreview()" value="${item ? Number(item.diskon || 0) : 0}" placeholder="0" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" />
         </div>
-      </div>
-      <div>
-        <label class="block text-xs font-semibold text-slate-700 mb-1">Diskon (Rp)</label>
-        <input type="number" id="f-diskon" min="0" oninput="updateLiveTotalPreview()" value="${item ? Number(item.diskon || 0) : 0}" placeholder="0" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-      </div>
-      <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 flex items-center justify-between">
-        <span class="text-xs font-semibold text-emerald-700">Total Harga Jual Setelah Diskon:</span>
-        <span id="f-total-preview" class="text-sm font-bold text-emerald-700">Rp 0</span>
-      </div>
-      <div>
-        <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal</label>
-        <input type="date" id="f-tanggal" required oninput="updateDatePreview(this.value)" value="${defDate}" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-        <p class="text-xs text-slate-500 mt-1">Format: <span id="f-date-preview" class="font-semibold text-slate-700">${formatTanggalIndo(defDate)}</span></p>
-      </div>
-    `;
-    setTimeout(updateLiveTotalPreview, 0);
+        <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 flex items-center justify-between">
+          <span class="text-xs font-semibold text-emerald-700">Total Harga Jual Setelah Diskon:</span>
+          <span id="f-total-preview" class="text-sm font-bold text-emerald-700">Rp 0</span>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal</label>
+          <input type="date" id="f-tanggal" required oninput="updateDatePreview(this.value)" value="${defDate}" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          <p class="text-xs text-slate-500 mt-1">Format: <span id="f-date-preview" class="font-semibold text-slate-700">${formatTanggalIndo(defDate)}</span></p>
+        </div>
+      `;
+      setTimeout(updateLiveTotalPreview, 0);
+    }
   } else if (type === 'status') {
     const defDate = item ? item.tanggal : today;
     const st = item ? item.status : 'Mati';
@@ -1176,6 +1442,46 @@ function handleDataFormSubmit(e) {
 
   let newObj;
   if (type === 'beli') {
+    if (!id) {
+      const rows = Array.from(document.querySelectorAll('#beli-multi-rows .beli-multi-row'));
+      if (rows.length === 0) return;
+
+      const baseTs = Date.now();
+      const newItems = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const jenisBurung = row.querySelector('.b-jenis').value.trim();
+        const jumlah = Number(row.querySelector('.b-jumlah').value);
+        const harga = Number(row.querySelector('.b-harga').value);
+        const hargaJual = Number(row.querySelector('.b-harga-jual').value);
+
+        if (!jenisBurung || jumlah <= 0 || harga < 0 || hargaJual < 0) {
+          showToast(`Periksa kembali isian Item #${i + 1}.`, 'warning');
+          return;
+        }
+
+        newItems.push({
+          id: `b${baseTs}_${i + 1}`,
+          jenisBurung,
+          jumlah,
+          harga,
+          hargaJual,
+          tanggal,
+        });
+      }
+
+      for (let i = newItems.length - 1; i >= 0; i--) {
+        state.beli.unshift(newItems[i]);
+      }
+      saveTableToStorage('beli');
+      sbUpsertRows('beli', newItems);
+      closeModal('modal-form');
+      refreshAllViews();
+      showToast(`${newItems.length} data stok burung berhasil ditambahkan!`, 'success');
+      return;
+    }
+
     newObj = {
       id: id || `b${Date.now()}`,
       jenisBurung: document.getElementById('f-jenis').value.trim(),
@@ -1185,6 +1491,55 @@ function handleDataFormSubmit(e) {
       tanggal,
     };
   } else if (type === 'jual') {
+    if (!id) {
+      const rows = Array.from(document.querySelectorAll('#jual-multi-rows .jual-multi-row'));
+      if (rows.length === 0) return;
+
+      const baseTs = Date.now();
+      const newItems = [];
+      const qtyPerBird = {};
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const jenisBurung = row.querySelector('.j-jenis').value.trim();
+        const jumlah = Number(row.querySelector('.j-jumlah').value);
+        const harga = Number(row.querySelector('.j-harga').value);
+        const diskon = Math.max(0, Number(row.querySelector('.j-diskon').value || 0));
+
+        if (!jenisBurung || jumlah <= 0) {
+          showToast(`Periksa kembali isian Item #${i + 1}.`, 'warning');
+          return;
+        }
+
+        const key = jenisBurung.toLowerCase();
+        qtyPerBird[key] = (qtyPerBird[key] || 0) + jumlah;
+        const stokTersedia = getAvailableStockForBird(jenisBurung, null);
+        if (qtyPerBird[key] > stokTersedia) {
+          showToast(`Total jumlah "${jenisBurung}" (${qtyPerBird[key]} ekor) melebihi stok tersedia (${stokTersedia} ekor)!`, 'warning');
+          return;
+        }
+
+        newItems.push({
+          id: `j${baseTs}_${i + 1}`,
+          jenisBurung,
+          jumlah,
+          harga,
+          diskon,
+          tanggal,
+        });
+      }
+
+      for (let i = newItems.length - 1; i >= 0; i--) {
+        state.jual.unshift(newItems[i]);
+      }
+      saveTableToStorage('jual');
+      sbUpsertRows('jual', newItems);
+      closeModal('modal-form');
+      refreshAllViews();
+      showToast(`${newItems.length} data burung terjual berhasil ditambahkan!`, 'success');
+      return;
+    }
+
     const jenisBurung = document.getElementById('f-jenis').value.trim();
     const jumlah = Number(document.getElementById('f-jumlah').value);
     const stokTersedia = getAvailableStockForBird(jenisBurung, id || null);
@@ -1895,11 +2250,15 @@ function subscribeSupabaseRealtime() {
 }
 
 async function sbUpsertRow(type, obj) {
-  if (!sbClient || !SB_TABLE_MAP[type]) return;
+  return sbUpsertRows(type, [obj]);
+}
+
+async function sbUpsertRows(type, objs) {
+  if (!sbClient || !SB_TABLE_MAP[type] || !objs || objs.length === 0) return;
   try {
     const { error } = await sbClient
       .from(SB_TABLE_MAP[type])
-      .upsert(toDbRow(type, obj), { onConflict: 'id' });
+      .upsert(objs.map(obj => toDbRow(type, obj)), { onConflict: 'id' });
     if (error) {
       console.warn(`Supabase upsert error (${SB_TABLE_MAP[type]}):`, error.message);
       showToast('Tersimpan lokal, gagal sinkron ke Supabase.', 'warning');
