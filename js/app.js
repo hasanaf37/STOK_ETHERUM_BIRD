@@ -482,7 +482,7 @@ function renderDashboard() {
     ? hppFiltered.reduce((s, i) => s + Number(i.nominal || 0), 0)
     : 0; // HPP is store-wide operational cost when specific bird selected
 
-  const labaBersih = jualFiltered.reduce((s, i) => s + getJualProfit(i), 0);
+  const labaBersih = totalJual - (totalModal + totalKerugian + totalHpp);
 
   // Animate KPIs
   animateCountUp(document.getElementById('kpi-stok'), stokHidup, false);
@@ -1670,7 +1670,7 @@ function renderLaporan() {
   const sumStatus = statusF.reduce((s, i) => s + Number(i.totalHarga), 0);
   const sumHpp = hppF.reduce((s, i) => s + Number(i.nominal), 0);
   const sumKeuntunganPenjualan = jualF.reduce((s, i) => s + getJualProfit(i), 0);
-  const laba = sumKeuntunganPenjualan;
+  const laba = sumJual - (sumBeli + sumStatus + sumHpp);
 
   document.getElementById('lap-sum-beli').textContent = formatRupiah(sumBeli);
   const jualKotorEl = document.getElementById('lap-sum-jual-kotor');
