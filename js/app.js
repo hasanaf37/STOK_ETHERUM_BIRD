@@ -1679,8 +1679,10 @@ function renderLaporan() {
   document.getElementById('lap-sum-status').textContent = formatRupiah(sumStatus);
   document.getElementById('lap-sum-hpp').textContent = formatRupiah(sumHpp);
   const labaEl = document.getElementById('lap-sum-laba');
-  labaEl.textContent = formatRupiah(laba);
-  labaEl.className = `text-base font-extrabold mt-1 ${laba >= 0 ? 'text-indigo-700' : 'text-rose-600'}`;
+  if (labaEl) {
+    labaEl.textContent = formatRupiah(laba);
+    labaEl.className = `text-base font-extrabold mt-1 ${laba >= 0 ? 'text-indigo-700' : 'text-rose-600'}`;
+  }
 
   // Render report tables
   document.getElementById('lap-tbody-beli').innerHTML = beliF.length
