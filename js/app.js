@@ -447,6 +447,13 @@ function getJualTotal(item) {
   return Math.max(0, (Number(item.jumlah || 0) * Number(item.harga || 0)) - Number(item.diskon || 0));
 }
 
+function getJualProfit(item) {
+  const totalRow = getJualTotal(item);
+  const beliMatch = state.beli.find(b => b.jenisBurung.trim().toLowerCase() === item.jenisBurung.trim().toLowerCase());
+  const hargaBeli = beliMatch ? Number(beliMatch.harga || 0) : 0;
+  return totalRow - (Number(item.jumlah || 0) * hargaBeli);
+}
+
 function renderDashboard() {
   populateBirdSelects();
   const timeFilter = document.getElementById('dash-filter-time').value;
@@ -1655,7 +1662,7 @@ function renderLaporan() {
   const sumJual = jualF.reduce((s, i) => s + getJualTotal(i), 0);
   const sumStatus = statusF.reduce((s, i) => s + Number(i.totalHarga), 0);
   const sumHpp = hppF.reduce((s, i) => s + Number(i.nominal), 0);
-  const laba = sumJual - sumBeli - sumStatus - sumHpp;
+  const laba = jualF.reduce((s, i) => s + getJualProfit(i), 0);
 
   document.getElementById('lap-sum-beli').textContent = formatRupiah(sumBeli);
   document.getElementById('lap-sum-jual').textContent = formatRupiah(sumJual);
@@ -1689,9 +1696,7 @@ function renderLaporan() {
     ? jualF.map((i, idx) => {
         const diskon = Number(i.diskon || 0);
         const totalRow = getJualTotal(i);
-        const beliMatch = state.beli.find(b => b.jenisBurung.trim().toLowerCase() === i.jenisBurung.trim().toLowerCase());
-        const hargaBeli = beliMatch ? Number(beliMatch.harga || 0) : 0;
-        const keuntunganBersih = totalRow - (Number(i.jumlah || 0) * hargaBeli);
+        const keuntunganBersih = getJualProfit(i);
         return `
         <tr class="pdf-avoid-break">
           <td class="py-2 px-3">${idx + 1}</td>
