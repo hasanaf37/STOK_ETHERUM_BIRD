@@ -482,7 +482,7 @@ function renderDashboard() {
     ? hppFiltered.reduce((s, i) => s + Number(i.nominal || 0), 0)
     : 0; // HPP is store-wide operational cost when specific bird selected
 
-  const labaBersih = totalJual - totalModal - totalKerugian - totalHpp;
+  const labaBersih = jualFiltered.reduce((s, i) => s + getJualProfit(i), 0);
 
   // Animate KPIs
   animateCountUp(document.getElementById('kpi-stok'), stokHidup, false);
@@ -1613,8 +1613,13 @@ function resetLaporanFilter() {
 
 function renderLaporan() {
   populateBirdSelects();
-  const start = document.getElementById('lap-date-start').value;
-  const end = document.getElementById('lap-date-end').value;
+  const rawStart = (document.getElementById('lap-date-start').value || '').trim().slice(0, 10);
+  const rawEnd = (document.getElementById('lap-date-end').value || '').trim().slice(0, 10);
+  let start = rawStart;
+  let end = rawEnd;
+  if (start && end && start > end) {
+    [start, end] = [end, start];
+  }
   const bird = document.getElementById('lap-filter-bird').value;
   const search = document.getElementById('lap-search').value.trim().toLowerCase();
 
@@ -1628,8 +1633,10 @@ function renderLaporan() {
   document.getElementById('lap-printed-at').textContent = formatTanggalIndo(getIsoDateOffset(0));
 
   const inRange = (iso) => {
-    if (start && iso < start) return false;
-    if (end && iso > end) return false;
+    const d = String(iso || '').trim().slice(0, 10);
+    if (!d) return false;
+    if (start && d < start) return false;
+    if (end && d > end) return false;
     return true;
   };
 
@@ -1662,10 +1669,13 @@ function renderLaporan() {
   const sumJual = jualF.reduce((s, i) => s + getJualTotal(i), 0);
   const sumStatus = statusF.reduce((s, i) => s + Number(i.totalHarga), 0);
   const sumHpp = hppF.reduce((s, i) => s + Number(i.nominal), 0);
-  const laba = jualF.reduce((s, i) => s + getJualProfit(i), 0);
+  const sumKeuntunganPenjualan = jualF.reduce((s, i) => s + getJualProfit(i), 0);
+  const laba = sumKeuntunganPenjualan;
 
   document.getElementById('lap-sum-beli').textContent = formatRupiah(sumBeli);
-  document.getElementById('lap-sum-jual').textContent = formatRupiah(sumJual);
+  const jualKotorEl = document.getElementById('lap-sum-jual-kotor');
+  if (jualKotorEl) jualKotorEl.textContent = formatRupiah(sumJual);
+  document.getElementById('lap-sum-jual').textContent = formatRupiah(sumKeuntunganPenjualan);
   document.getElementById('lap-sum-status').textContent = formatRupiah(sumStatus);
   document.getElementById('lap-sum-hpp').textContent = formatRupiah(sumHpp);
   const labaEl = document.getElementById('lap-sum-laba');
@@ -1823,6 +1833,7 @@ function renderLaporanCharts(sumBeli, sumJual, sumStatus, sumHpp, laba) {
 }
 
 function exportReportPDF() {
+  renderLaporan();
   const element = document.getElementById('laporan-print-area');
   const btn = document.getElementById('btn-export-pdf');
   const origText = btn.innerHTML;
@@ -1830,9 +1841,15 @@ function exportReportPDF() {
   btn.disabled = true;
   btn.innerHTML = '<span>Memproses PDF...</span>';
 
+  const start = (document.getElementById('lap-date-start')?.value || '').trim().slice(0, 10);
+  const end = (document.getElementById('lap-date-end')?.value || '').trim().slice(0, 10);
+  const dateTag = (start && end)
+    ? `${start}_sd_${end}`
+    : (start || end || getIsoDateOffset(0));
+
   const opt = {
     margin: [10, 10, 10, 10],
-    filename: `Laporan-Ethereum-Bird-${getIsoDateOffset(0)}.pdf`,
+    filename: `Laporan-Ethereum-Bird-${dateTag}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, logging: false },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },

@@ -522,11 +522,11 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-slate-100">
               <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Dari Tanggal</label>
-                <input type="date" id="lap-date-start" onchange="renderLaporan()" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <input type="date" id="lap-date-start" oninput="renderLaporan()" onchange="renderLaporan()" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               </div>
               <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Sampai Tanggal</label>
-                <input type="date" id="lap-date-end" onchange="renderLaporan()" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <input type="date" id="lap-date-end" oninput="renderLaporan()" onchange="renderLaporan()" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               </div>
               <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Filter Jenis Burung</label>
@@ -564,14 +564,18 @@
             <!-- Rekapitulasi Laba / Rugi -->
             <div class="pdf-avoid-break">
               <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Ringkasan Rekapitulasi Keuangan</h4>
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
                 <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
                   <p class="text-[11px] font-semibold text-slate-500 uppercase">Total Pembelian</p>
                   <p class="text-base font-bold text-slate-900 mt-1" id="lap-sum-beli">Rp 0</p>
                 </div>
-                <div class="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200">
-                  <p class="text-[11px] font-semibold text-emerald-700 uppercase">Total Penjualan</p>
-                  <p class="text-base font-bold text-emerald-700 mt-1" id="lap-sum-jual">Rp 0</p>
+                <div class="p-3.5 rounded-xl bg-emerald-50/40 border border-emerald-200">
+                  <p class="text-[11px] font-semibold text-emerald-700 uppercase">Total Penjualan Kotor</p>
+                  <p class="text-base font-bold text-emerald-700 mt-1" id="lap-sum-jual-kotor">Rp 0</p>
+                </div>
+                <div class="p-3.5 rounded-xl bg-emerald-50/80 border border-emerald-200">
+                  <p class="text-[11px] font-semibold text-emerald-800 uppercase">Total Penjualan Bersih</p>
+                  <p class="text-base font-bold text-emerald-800 mt-1" id="lap-sum-jual">Rp 0</p>
                 </div>
                 <div class="p-3.5 rounded-xl bg-rose-50/70 border border-rose-200">
                   <p class="text-[11px] font-semibold text-rose-700 uppercase">Kerugian Status</p>
