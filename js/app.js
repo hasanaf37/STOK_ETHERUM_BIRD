@@ -1843,6 +1843,25 @@ function exportReportPDF() {
   btn.disabled = true;
   btn.innerHTML = '<span>Memproses PDF...</span>';
 
+  // Selesaikan animasi Chart.js seketika & konversi canvas -> <img> sementara agar html2canvas selalu menangkap grafik
+  const tempImgs = [];
+  ['lapKeuangan', 'lapKomposisi'].forEach(key => {
+    const chart = state.charts[key];
+    if (chart) {
+      chart.stop();
+      chart.update('none');
+      const canvas = chart.canvas;
+      if (canvas && canvas.parentNode) {
+        const img = document.createElement('img');
+        img.src = chart.toBase64Image('image/png', 1);
+        img.className = 'w-full h-full object-contain';
+        canvas.style.display = 'none';
+        canvas.parentNode.appendChild(img);
+        tempImgs.push({ img, canvas });
+      }
+    }
+  });
+
   const start = (document.getElementById('lap-date-start')?.value || '').trim().slice(0, 10);
   const end = (document.getElementById('lap-date-end')?.value || '').trim().slice(0, 10);
   const dateTag = (start && end)
@@ -1866,6 +1885,10 @@ function exportReportPDF() {
       showToast('Gagal membuat PDF. Silakan coba lagi.', 'error');
     })
     .finally(() => {
+      tempImgs.forEach(({ img, canvas }) => {
+        img.remove();
+        canvas.style.display = '';
+      });
       btn.disabled = false;
       btn.innerHTML = origText;
     });
